@@ -1,10 +1,12 @@
-# AI Solution Architect
+# CAT (Convoluted Agent Trying to code) or at least can help you prototype
 
-A multi-agent system that takes your requirements and autonomously designs a solution — complete with architecture, tech stack, and a code prototype.
+Sometimes I just need a quick prototype of a simple system to work first, so I created **CAT (Convoluted Agent Trying to code)**. My goal is that if I give it a goal, it should be able to build the system by itself reliably using the free models available on the internet.
 
-## 🧠 How It Works
+## How It Works
 
-You describe what you want to build in plain English. Six specialized AI agents collaborate to produce:
+You describe what you want to build in plain English, then feed it into the system. The problem is that cheap models freely available on the internet are usually poor and prone to hallucinations because they don't have a long context (or I just suck at finding good models). My thought was that if I can create a loop in the system architecture, it can reliably detect what it needs to do with the minimal context needed, then solve the problem step by step. For example, to create a project, it first needs to be aware that it needs to create a file.
+
+I use LangChain to create the workflow of agents below:
 
 1. **📋 Product Manager** — Structures your requirements into features & user stories
 2. **🏗️ Architect** — Designs the system architecture with components & data flow
@@ -13,29 +15,26 @@ You describe what you want to build in plain English. Six specialized AI agents 
 5. **🛠️ Prototype Builder** — Generates actual code files you can run
 6. **✅ QA Validator** — Validates the prototype and writes test cases
 
+Currently, the agent logic is implemented as a binary module for specific reasons I won't go into detail about here. I can guarantee that the binary file does nothing else except act as a node within the LangChain framework. If you want to use it, you'll just have to trust that I'm not lying to you.
+
 ```
 Requirements → PM → Architect → Tech Strategist → Critic → Builder → QA → Output
                                                      ↑                        |
                                                      └── Revision Loop ───────┘
 ```
 
-## 🚀 Quick Start
+## Quick Start
 
 ### 1. Install Dependencies
-
+- Create a Python environment and install the requirements.
 ```bash
 pip install -r requirements.txt
 ```
 
-### 2. Set Up NVIDIA NIM API Key
+### 2. Set Up API Key
+- There should be a `.env.template` file.
+- I try to use free-tier LLMs available on the internet.
 
-1. Sign up for free at [build.nvidia.com](https://build.nvidia.com)
-2. Generate an API key
-3. Edit `.env` and set your key:
-
-```
-NVIDIA_API_KEY=nvapi-your-actual-key-here
-```
 
 ### 3. Run
 
@@ -60,28 +59,9 @@ It should have a web dashboard and REST API.
 
 ```
 
-## 📁 Output
+The goal is for it to build systems like the one above and generate unit tests to verify the functionality. Think of it this way: to build trust, the system provides unit tests so that if you run them and they pass, you know it works. Of course, there are questions about the validity of the tests and other factors, but at this early stage, it should be enough. Currently, the system's capability is limited to creating a Python-based todo app within approximately 12 hours.
 
-Generated projects are saved to the `output/` folder:
-
-```
-output/
-└── your_project_name/
-    ├── README.md           # Setup instructions
-    ├── src/                # Application code
-    ├── tests/              # Auto-generated test cases
-    └── ...                 # Config files, etc.
-```
-
-## ⚙️ Configuration
-
-| Variable | Default | Description |
-|---|---|---|
-| `NVIDIA_API_KEY` | — | Your NIM API key (required) |
-| `MODEL_NAME` | `meta/llama-3.3-70b-instruct` | LLM model to use |
-| `MAX_REVISION_LOOPS` | `2` | Max times the Critic can send designs back |
-
-## 🏗️ Architecture
+## Architecture
 
 Built with:
 - **LangGraph** — Stateful graph orchestration for the agent pipeline
@@ -90,5 +70,4 @@ Built with:
 - **Rich** — Beautiful terminal UI
 
 ## 📄 License
-
 MIT
