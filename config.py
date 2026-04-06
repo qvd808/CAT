@@ -52,11 +52,16 @@ def _create_llm_from_provider(provider, temp, max_tokens=None):
         
         # Build kwargs for the LLM constructor
         kwargs = {
-            "api_key": api_key,
             "temperature": temp,
             "max_tokens": max_tokens if max_tokens is not None else provider.get("max_tokens", 4096),
         }
-        
+
+        # Mistral native client uses mistral_api_key, all others use api_key
+        if class_name == "ChatMistralAI":
+            kwargs["mistral_api_key"] = api_key
+        else:
+            kwargs["api_key"] = api_key
+
         # Add model parameter (all providers use "model")
         kwargs["model"] = model
         if class_name == "ChatOpenAI":
@@ -153,15 +158,21 @@ def get_llm_with_fallback(role: str = "supervisor", max_retries: int = None, max
             return None
         
         def invoke(self, *args, **kwargs):
-            """Invoke the LLM with automatic fallback on errors."""
+            """
+            Invoke the LLM with automatic fallback on errors.
+            Tries each enabled provider once. If all are rate-limited or unavailable,
+            raises immediately — the caller should report failure to the user.
+            """
+            ordered = _ordered_providers_for_role(self.role)
+            n_providers = sum(1 for p in ordered if p.get("enabled", True))
+
             last_error = None
-            
-            for attempt in range(self.max_retries):
+            for _ in range(n_providers):
                 if self._llm is None:
                     self._llm = self._get_next_llm()
                     if self._llm is None:
-                        raise ValueError("No LLM providers available")
-                
+                        break
+
                 try:
                     return self._llm.invoke(*args, **kwargs)
                 except Exception as e:
@@ -169,14 +180,17 @@ def get_llm_with_fallback(role: str = "supervisor", max_retries: int = None, max
                     error_msg = str(e)
                     is_rate_limit = "429" in error_msg or "rate_limit" in error_msg.lower() or "402" in error_msg
                     is_server_error = any(code in error_msg for code in ["500", "502", "503", "504"])
-                    
+
                     if is_rate_limit or is_server_error:
-                        reason = "rate limit/credits" if "429" in error_msg or "402" in error_msg else "server error"
+                        reason = "rate limit/credits" if ("429" in error_msg or "402" in error_msg) else "server error"
                         print(f"  [dim]⚠️ LLM error ({reason}), switching provider...[/]")
-                        self._llm = None  # Force getting a new provider
+                        self._llm = None  # Force getting a new provider next iteration
                     else:
-                        raise  # Re-raise non-retryable errors
-            
-            raise last_error
+                        raise  # Re-raise non-retryable errors immediately
+
+            raise RuntimeError(
+                "All LLM providers are currently rate-limited or unavailable. "
+                "Please wait and try again later."
+            )
     
     return FallbackLLM(role, max_retries, max_tokens)

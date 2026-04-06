@@ -35,7 +35,18 @@ PROVIDERS = [
         "class": "ChatGroq",
         "max_tokens": 8192,
     },
-    # 3. SambaNova — fast reasoning, $5 free trial credits, no CC
+    # 3. Mistral AI — free tier, uses langchain-mistralai (native client, no max_completion_tokens issue)
+    {
+        "name": "mistral",
+        "enabled": True,
+        "api_key_env": "MISTRAL_API_KEY",
+        "model_env": "MISTRAL_MODEL",
+        "default_model": "mistral-small-latest",
+        "module": "langchain_mistralai",
+        "class": "ChatMistralAI",
+        "max_tokens": 8192,
+    },
+    # 4. SambaNova — fast reasoning, $5 free trial credits, no CC
     #    OpenAI-compatible endpoint — no extra package needed
     {
         "name": "sambanova",
@@ -48,7 +59,7 @@ PROVIDERS = [
         "base_url": "https://api.sambanova.ai/v1",
         "max_tokens": 8192,
     },
-    # 4. NVIDIA NIM — free credits on sign-up
+    # 5. NVIDIA NIM — free credits on sign-up
     {
         "name": "nvidia",
         "enabled": True,
@@ -59,13 +70,13 @@ PROVIDERS = [
         "class": "ChatNVIDIA",
         "max_tokens": 8192,
     },
-    # 5. OpenRouter (free models only, `:free` suffix) — 200 req/day per model, no CC
+    # 6. OpenRouter (free models only, `:free` suffix) — 200 req/day per model, no CC
     {
         "name": "openrouter",
         "enabled": True,
         "api_key_env": "OPENROUTER_API_KEY",
         "model_env": "OPENROUTER_MODEL",
-        "default_model": "meta-llama/llama-3.3-70b-instruct:free",
+        "default_model": "openai/gpt-oss-20b:free",
         "module": "langchain_openai",
         "class": "ChatOpenAI",
         "base_url": "https://openrouter.ai/api/v1",
@@ -75,7 +86,7 @@ PROVIDERS = [
             "X-Title": "AI Solution Architect",
         },
     },
-    # 6. Google AI Studio — Gemini 2.5 Flash free tier (needs langchain-google-genai)
+    # 7. Google AI Studio — Gemini 2.5 Flash free tier (needs langchain-google-genai)
     #    65k output tokens, 1M context window — best choice for heavy generation tasks
     {
         "name": "google",
@@ -101,11 +112,11 @@ TEMPERATURES = {
 }
 
 # Roles that need high output tokens or deep reasoning.
-# These providers are tried FIRST for the listed roles before falling back to the default PROVIDERS list.
-# Maps role name → provider name (must match a "name" field in PROVIDERS above).
+# Providers are tried in the order listed before falling back to the full PROVIDERS list.
+# openrouter is last — free tier caps at 4096 tokens, so it's a last resort for heavy tasks.
 ROLE_PROVIDERS: dict[str, list[str]] = {
-    "prototype_builder": ["google", "cerebras", "groq"],
-    "architect":         ["google", "cerebras", "groq"],
-    "test_engineer":     ["google", "cerebras", "groq"],
-    "debugger":          ["google", "cerebras", "groq"],
+    "prototype_builder": ["google", "cerebras", "mistral", "groq", "nvidia", "sambanova", "openrouter"],
+    "architect":         ["google", "cerebras", "mistral", "groq", "nvidia", "sambanova", "openrouter"],
+    "test_engineer":     ["google", "cerebras", "mistral", "groq", "nvidia", "sambanova", "openrouter"],
+    "debugger":          ["google", "cerebras", "mistral", "groq", "nvidia", "sambanova", "openrouter"],
 }

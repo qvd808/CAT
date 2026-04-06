@@ -162,6 +162,10 @@ def run(auto_mode: bool = False, fix_path: str = None):
             "qa_result": None,
             "resolution_queue": [main_goal],
             "revision_count": 0,
+            "debug_iteration": 0,
+            "total_patch_count": 0,
+            "sandbox_attempts": 0,
+            "test_engineer_attempts": 0,
             "current_phase": "Starting",
             "next_agent": "",
             "auto_mode": auto_mode,
@@ -206,6 +210,25 @@ def run(auto_mode: bool = False, fix_path: str = None):
         console.print("\n[yellow]⏹️  Pipeline interrupted by user.[/]")
         log.run_error(KeyboardInterrupt("Interrupted by user"))
         sys.exit(0)
+    except RuntimeError as e:
+        error_msg = str(e)
+        if "rate-limited" in error_msg or "unavailable" in error_msg:
+            from rich.panel import Panel
+            console.print()
+            console.print(Panel(
+                f"[bold yellow]All LLM providers are currently rate-limited or unavailable.[/]\n\n"
+                f"Please wait a while and try again.\n\n"
+                f"[dim]No output was saved — the run did not complete.[/]",
+                title="⏸️  Rate Limit — Run Stopped",
+                border_style="yellow",
+                padding=(1, 2),
+            ))
+            log.run_error(e)
+            sys.exit(1)
+        else:
+            console.print(f"\n[bold red]❌ Error:[/] {e}")
+            log.run_error(e)
+            raise
     except Exception as e:
         console.print(f"\n[bold red]❌ Error:[/] {e}")
         console.print("[dim]Check your API key and network connection.[/]")
