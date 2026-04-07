@@ -27,7 +27,11 @@ def parse_llm_json(text: str, model_class: type[BaseModel] | None = None) -> dic
     Returns:
         Parsed dict (validated against model_class if provided)
     """
+    if not text:
+        raise ValueError("LLM returned empty response (thinking-only model or rate-limited)")
     text = text.strip()
+    if not text:
+        raise ValueError("LLM returned empty response (whitespace only)")
     last_val_error = None
     
     def try_strategy(candidate: str):

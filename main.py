@@ -166,6 +166,8 @@ def run(auto_mode: bool = False, fix_path: str = None):
             "total_patch_count": 0,
             "sandbox_attempts": 0,
             "test_engineer_attempts": 0,
+            "planning_done": False,
+            "oversized_files": None,
             "current_phase": "Starting",
             "next_agent": "",
             "auto_mode": auto_mode,

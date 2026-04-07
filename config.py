@@ -157,6 +157,13 @@ def get_llm_with_fallback(role: str = "supervisor", max_retries: int = None, max
                     return llm
             return None
         
+        def bind(self, **kwargs):
+            """Return a new FallbackLLM with overridden max_tokens (ignores other kwargs)."""
+            new_max_tokens = kwargs.get("max_tokens", self.max_tokens)
+            new = FallbackLLM(self.role, self.max_retries, new_max_tokens)
+            new._provider_idx = self._provider_idx
+            return new
+
         def invoke(self, *args, **kwargs):
             """
             Invoke the LLM with automatic fallback on errors.
