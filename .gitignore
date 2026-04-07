@@ -30,6 +30,7 @@ logs/
 # Python
 __pycache__/
 *.py[cod]
+!*.pyd
 *$py.class
 *.so
 .Python
